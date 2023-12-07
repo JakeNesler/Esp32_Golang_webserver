@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #9e9e9e;
+        color: #333;
+        text-align: center;
+    }
+
+    .card {
+        background-color: #bababa;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin: 20px auto;
+        padding: 20px;
+        width: 80%;
+        max-width: 400px;
+    }
+
+    h1 {
+        color: #000;
+    }
+
+    h2 {
+        color: #1d1d1f;
+    }
+
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    li {
+        margin: 10px 0;
+        font-size: 18px;
+    }
+
+    button {
+        background-color: #007aff;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        padding: 10px 20px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    button[data-state="off"] {
+        background-color: #ccc;
+    }
+
+    button[data-checked="false"] {
+        background-color: #ccc;
+    }
+</style>
+
+<head>
+    <!-- ... other head elements ... -->
+    <script>
+        // Function to send a POST request to toggle the button state
+        function toggleButton(deviceIP, buttonKey) {
+            // Determine the current state of the button
+            var button = document.getElementById(buttonKey);
+            var isOn = button.getAttribute('data-state') === 'on';
+
+            // Create the request URL
+            var requestURL = 'http://' + deviceIP + '/update';
+
+            // Prepare the form data
+            var formData = new FormData();
+            var paramKey = buttonKey;
+            // Convert the boolean to a string that matches what the ESP32 is expecting
+            formData.append(paramKey, isOn ? 'false' : 'true');
+
+            // Send the POST request
+            fetch(requestURL, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    // Toggle the button state attribute and text based on the current state
+                    if (isOn) {
+                        button.setAttribute('data-state', 'off');
+                        button.textContent = 'OFF';
+                    } else {
+                        button.setAttribute('data-state', 'on');
+                        button.textContent = 'ON';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+
+
+
+        function toggleCheckbox(deviceIP, checkboxKey) {
+            var checkboxes = document.querySelectorAll('button[data-checked]');
+            checkboxes.forEach(function (checkbox) {
+                if (checkbox.id !== checkboxKey) {
+                    checkbox.setAttribute('data-checked', 'false');
+                    checkbox.textContent = 'Unchecked';
+                }
+            });
+
+            var checkbox = document.getElementById(checkboxKey);
+            var isChecked = checkbox.getAttribute('data-checked') === 'true';
+
+            // Create the request URL
+            var requestURL = 'http://' + deviceIP + '/update';
+
+            // Prepare the form data
+            var formData = new FormData();
+            formData.append(checkboxKey, isChecked ? 'false' : 'true');
+
+            // Send the POST request
+            fetch(requestURL, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    // Toggle the checkbox state attribute based on the current state
+                    if (isChecked) {
+                        checkbox.setAttribute('data-checked', 'false');
+                        checkbox.textContent = 'Unchecked';
+                    } else {
+                        checkbox.setAttribute('data-checked', 'true');
+                        checkbox.textContent = 'Checked';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Device Dashboard</h1>
+    {{ range .Devices }}
+    {{ $deviceIP := .IP }} <!-- Capture the IP address in a variable -->
+    <div class="card">
+        <h2>{{ .Name }} ({{ .IP }})</h2>
+        <ul>
+            {{ range $key, $value := .Buttons }}
+            <li>
+                {{ $key }}:
+                <button id="{{ $key }}" data-state="{{ if $value }}on{{ else }}off{{ end }}"
+                    onclick="toggleButton('{{ $deviceIP }}', '{{ $key }}')">
+                    {{ if $value }}ON{{ else }}OFF{{ end }}
+                </button>
+            </li>
+            {{ end }}
+            {{ range $key, $value := .Checkboxes }}
+            <li>
+                {{ $key }}:
+                <button id="{{ $key }}" data-checked="{{ $value }}"
+                    onclick="toggleCheckbox('{{ $deviceIP }}', '{{ $key }}')">
+                    {{ if $value }}Checked{{ else }}Unchecked{{ end }}
+                </button>
+            </li>
+            {{ end }} <!-- This is the closing statement for the range action -->
+        </ul>
+    </div>
+    {{ end }}
+</body>
+
+</html>
