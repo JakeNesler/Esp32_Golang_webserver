@@ -248,7 +248,7 @@ func RunServers() {
 				color = "255,255,0" // Yellow
 			case "chelseasmi5":
 				color = "0,255,0" // Green
-			case "michaelschneider794":
+			case "michael schneider":
 				color = "255,0,0" // Red
 			default:
 				color = ""
@@ -259,11 +259,11 @@ func RunServers() {
 
 				// 1) Set user’s color (solid) for 5s
 				if err := setPattern("chase", "5000", color); err != nil {
-					fmt.Printf("❌ setPattern(solid) error: %v\n", err)
+					fmt.Printf("❌ setPattern(chase) error: %v\n", err)
 				} else {
 					fmt.Println("✅ Solid color set for 5s.")
 				}
-
+				time.Sleep(5000)
 				// After 5s → set rainbow for 5s
 				time.AfterFunc(5*time.Second, func() {
 					fmt.Println("⌛ 5s passed => setting rainbow for next 5s.")
@@ -279,6 +279,44 @@ func RunServers() {
 			}
 		}
 
+		// If event=media.play + type=episode => user-based color for 5s, then rainbow
+		if (eventType == "media.play" || eventType == "media.resume") && mediaType == "movie" {
+			var color string
+			switch accountTitle {
+			case "stephen1713":
+				color = "255,255,0" // Yellow
+			case "chelseasmi5":
+				color = "0,255,0" // Green
+			case "michael schneider":
+				color = "255,0,0" // Red
+			default:
+				color = ""
+			}
+
+			if color != "" {
+				fmt.Printf("📺 movie => user=%s => color=%s. Setting solid for 5s, then rainbow for 5s, then off.\n", accountTitle, color)
+
+				// 1) Set user’s color (solid) for 5s
+				if err := setPattern("solid", "5000", color); err != nil {
+					fmt.Printf("❌ setPattern(solid) error: %v\n", err)
+				} else {
+					fmt.Println("✅ Solid color set for 5s.")
+				}
+				time.Sleep(5000)
+				// After 5s → set rainbow for 5s
+				time.AfterFunc(5*time.Second, func() {
+					fmt.Println("⌛ 5s passed => setting rainbow for next 5s.")
+					if err := setPattern("rainbow", "5000", ""); err != nil {
+						fmt.Printf("❌ setPattern(rainbow) error: %v\n", err)
+					} else {
+						fmt.Println("✅ Rainbow set for 5s.")
+					}
+				})
+
+			} else {
+				fmt.Println("🔸 No matching user => no color set for TV episode.")
+			}
+		}
 		// Done
 		c.JSON(http.StatusOK, gin.H{"message": "Webhook processed successfully"})
 	})
